@@ -1,0 +1,89 @@
+#!/usr/bin/zsh
+
+# 
+# Copyright (C) 2014i, Lorenzo Mureu <mureulor@gmail.com>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, 
+# are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, 
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this 
+# list of conditions and the following disclaimer in the documentation and/or other 
+# materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors 
+# may be used to endorse or promote products derived from this software without 
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+
+
+# This script allows the admin to see which package groups are installed
+# and decide whether to remove the group as a whole, remove single packages
+# which belong to said group, or keep the group as a whole.
+
+# If not root, print message and exit
+[ `id -u` -eq 0 ] || { echo "ERROR: must be root (uid=0)"; exit 1 }
+
+# create all the needed temporary files
+groups=`mktemp` # the list of the installed groups
+grptmp=`mktemp` # the list of packages in the current group
+rmlist=`mktemp` # the list of packages to be removed
+
+echo "\nLet's gather the list of installed package groups..."
+pacman -Qg | awk '{print $1}' | uniq > $groups
+
+listgrp() { pacman -Qg | grep $1 | awk '{print $2}' }
+
+for group in $( cat ${groups} )
+do
+	echo "\nGroup: $group. Action: [List packages; Keep group; Remove group; remove single Packages; (default: L)] "
+	while [ 1 ] do
+		read choice
+		case $choice in
+			K|k) break ;;
+			R|r) listgrp $group >> $rmlist ; break;;
+			P|p) for pkg in $( listgrp $group ) do
+				echo "\tPackage $pkg: action [Info; Keep; Remove; List binaries; (default: I)] "
+				while [ 1 ] do
+					read choice2
+					case $choice2 in
+						K) break;;
+						R|r) echo $pkg >> $rmlist; break ;;
+						L|l) pacman -Ql $pkg | grep bin/ ;;
+						i|I|*) pacamn -Qi $pkg ;;
+					esac
+				done;	break;;
+			l|L|*) listgrp $group ;;
+		esac
+	done
+done
+
+echo "\nDo you want to review the list of the packages that will be removed? [Y/n] "
+read choice
+[[ $choice != "n" ]] && [[ $choice != "N" ]] && {
+	[[ -x $EDITOR ]] && $EDITOR $rmlist || vi $rmlist
+}
+
+echo "\nDo you want to continue? [y/N]"
+read choice
+[[ $choice != "y" ]] && [[ $choice != "Y" ]] && {
+	savedfile="$HOME/.mrmgroups_rmlist"
+	echo "List of packages that would have been removed was saved as $savedfile" 
+	mv $rmlist $savedfile
+} || { cat $rmlist | pacman -Rs - ; echo "\nDone."}

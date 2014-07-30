@@ -1,0 +1,90 @@
+#!/usr/bin/zsh
+
+# 
+# Copyright (C) 2014i, Lorenzo Mureu <mureulor@gmail.com>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, 
+# are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, 
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this 
+# list of conditions and the following disclaimer in the documentation and/or other 
+# materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors 
+# may be used to endorse or promote products derived from this software without 
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+source /etc/zsh/zshrc
+
+soundloop()
+{
+	
+	#for i in {1..10}; aplay /root/alert.wav
+}
+
+logfile="/var/log/mbattery.log"
+tmpfile="/tmp/mbattery.last"
+
+# if battery is charging, delete tmpfile and exut
+[[ $( acpi -b | awk '{print $3}' ) == 'Charging,' ]] &&  {
+	rm $tmpfile
+	exit
+}
+	
+# look up acpi information to see the battery level
+battery=$( acpi -b | awk '{print $4}' | sed 's/%,//' )
+
+# if user(s) has already been informed about current battery level
+# i.e. if battery level was the same between two invocations of this program
+# i.e. if battery level is equal the content of $tmpfile
+# then, do nothing. Else, write current battery level into file and
+# continue executing the script
+[ -e "$tmpfile" ] && [ $(cat "$tmpfile") -eq $battery ] && 
+	exit || 
+	echo "$battery" > $tmpfile
+
+# if battery il <=5% then hibernate
+[ $battery -le 5 ] && {
+	title="Battery level is critical"
+	msg="Your battery level is critical ( <= 5% ).\nYou have 30 seconds to plug in the charger, or\
+the computer will hibernate to preserve integrity of your data."
+	# warn the user, both via wall and zenity
+	uxrun zenity --warning --title  $title --text $msg &>> $logfile &
+	wall <( echo -e "*** $title ***\n$msg" ) &>> $logfile &
+	# wait 30s and hibernate only if not charging
+	sleep 30
+	[[ $( acpi -b | awk '{print $3}' ) == 'Charging,' ]] || {
+		echo "hibernating ( $(acpi) )..."  &>> $logfile
+		systemctl hibernate & &>> $logfile
+	}
+	exit
+}
+
+# if battery is {20,15,10}% let's play a sound to inform the user(s)
+# and warn the user(s) also via message (wall and zenity)
+[ $battery -le 20  ] && [ $(( $battery % 5 )) -eq 0 ] && {
+	title="Battery level is low"
+	msg="Your battery level is low ($battery%).\nPlease plug in your charger soon."
+	soundloop &>> $logfile &
+	uxrun zenity --warning --title $title --text $msg &>> $logfile &
+	wall <( echo -e "*** $title ***\n$msg" ) &>> $logfile &
+	echo "all user are warned, battery is at $battery%"  >> $logfile
+	exit
+}

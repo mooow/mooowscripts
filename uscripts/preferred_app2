@@ -1,0 +1,69 @@
+#!/usr/bin/env perl
+
+# 
+# Copyright (C) 2014i, Lorenzo Mureu <mureulor@gmail.com>
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without modification, 
+# are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, 
+# this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice, this 
+# list of conditions and the following disclaimer in the documentation and/or other 
+# materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors 
+# may be used to endorse or promote products derived from this software without 
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
+# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+# This program takes a program name and, optionally, a mimetypes list.
+# Then it tells xdg-mime to set the program as the default application for that
+# mimetypes list. If the mimetypes list is not given, then all the default mimetypes
+# of the program are used.
+#
+
+use 5.020;
+use strict;
+use warnings;
+use autodie;
+use diagnostics;
+
+die "Usage: $0 program [mimetype list]\n" unless (@ARGV >= 1);
+
+my $program = $ARGV[0];
+my $cmd;
+if ( @ARGV == 1 ) {
+	open IN, "/usr/share/applications/$program.desktop";
+	my @lines = grep /^MimeType=/ , <IN>;
+	foreach (@lines) {
+		s/MimeType=//;
+		my @mimes = split /;/;
+		$cmd = "xdg-mime default ${program}.desktop @mimes";
+		say $cmd;
+	}
+	close IN;
+} else {
+	my @mimes = @ARGV[1..$#ARGV];
+	$cmd = "xdg-mime default ${program}.desktop @mimes";
+	say $cmd;
+}
+`$cmd`;
+
+
+# TODO: 
+#  * fix usage: program [mimetype pattern] and grep @mimes

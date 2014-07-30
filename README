@@ -1,0 +1,22 @@
+The scripts in mscripts/ - where the 'm' stays for 'maintenance' - are
+meant to be run by root BUT the DON'T do any sort of checks.
+I installed them as root:wheel 770
+
+The scripts in uscripts/ - where the 'u' stays for 'utilities' - are
+meant to be used by every user. In fact, the don't require any special
+permissions, and the operations they perform shouldn't be harmful in any
+vay. Thus I installed them as root:wheel 775
+
+This collection has the following dependencies: 
+ * python3 (required by remdup)
+ * xdg-utils (required by preferred_app2)
+ * zsh (required by almost every script in this collection)
+ 	NB: *maybe* bash could be enough, perhaps with minor changes,
+	    anyways I am planning to port every script to perl, in 
+	    order to avoid such issues.
+ * perl >= 5.10 (required preferred_app2)
+ 	NB: perl is also required by xdg-utils
+It is possible that other dependencies are not included in this list.
+
+== DESCRIPTION ==
+A brief description for each script will be added here.
