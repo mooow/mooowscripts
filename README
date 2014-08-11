@@ -18,5 +18,31 @@ This collection has the following dependencies:
  	NB: perl is also required by xdg-utils
 It is possible that other dependencies are not included in this list.
 
+== INSTALLING ==
+Running ./install will install the script according to the rules in
+install.conf
+
+Each line in install.conf is a RULE.
+Each rule has the following syntax:
+
+SELECTOR  OWNER  GROUP  PERMISSION  DESTINATION
+The words can be separated by any sequence of whitespaces (e.g. spaces or
+tabs).
+
+SELECTOR : a sh-like filename expansion (like images*.jpg , img0?.png or
+directory/*
+This selects which files are affected by this rule.
+
+OWNER : This will be the owner of the installed files (this might require root
+permissions).
+
+GROUP : This will be the group of the installed files (this might require root
+permissions).
+
+PERMISSION : Octal permission mask, for the installed files (e.g. 0770, 0753,
+0700)
+
+DESTINATION: The path where the files will be installed (e.g. /usr/local)
+
 == DESCRIPTION ==
 A brief description for each script will be added here.

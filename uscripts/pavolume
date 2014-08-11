@@ -1,0 +1,67 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use diagnostics;
+
+my $ponymix;
+
+sub getv {
+	`$ponymix get-volume`;
+}
+
+sub setv {
+	`$ponymix set-volume $_[0]`;
+}
+
+sub incv {
+	`$ponymix increase $_[0]`;
+}
+
+sub decv {
+	`$ponymix decrease $_[0]`;
+}
+
+sub test {
+	chomp ($ponymix = `which ponymix`);
+	die "ERROR! ponymix not found!\n" if ($?);
+}
+
+sub usage {
+	die "Usage:
+1) $0
+2) $0 <value>[%]
+3) $0 ( + | - )<value>[%]
+
+mode 1) get current volume
+mode 2) set absolute volume (in percentual)
+mode 3) increment or decrement current volume by the specified value
+
+$0 is a frontend to ponymix\n";
+}
+
+test(); # check whether ponymix is correctly installed
+
+if(@ARGV == 0) {
+	print getv();
+} elsif (@ARGV == 1) {
+	if( $ARGV[0] =~ m/(^[+-]?)(\d+)%?$/ ) {
+		if ($1 eq '+') {
+			print incv($2);
+		} elsif ($1 eq '-') {
+			print decv($2);
+		} else {
+			print setv($2);
+		}
+	} else {
+		usage();
+	}
+} else {
+	usage();
+}
+
+
+
+
+
+

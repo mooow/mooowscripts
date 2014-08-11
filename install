@@ -1,0 +1,31 @@
+#!/usr/bin/env perl
+use strict;	
+use warnings;	 
+use 5.010; 	# so file tests can stack (e.g. -f -r $filename)
+
+use File::Copy qw(copy);
+use File::Path qw(make_path);
+use File::Basename qw(basename dirname);
+
+my $conff = "$0.conf";
+open (IN, "<", $conff) or die "$conff: file not found\n";
+
+my $counter=1;
+LINE: while(<IN>) {
+	if (! m/\s*(?<expr>\S+)\s+(?<user>\w+)\s+(?<group>\w+)\s+(?<mode>\d+)\s(?<path>\S+).*/ ) {  
+		print "$conff: Syntax error on line $counter, skipped.\n"; 
+		next LINE;
+       	}
+	foreach( glob $+{expr} ) {
+		my $file = $_; 
+		my $ndir = $+{path}."/".dirname($file);
+		my $nfile = $+{path}."/".$file;
+		make_path($ndir);
+		copy $file, $nfile;
+		chmod oct($+{mode}), $nfile or print "Can't change permission of $nfile\n";
+		my $uid = getpwnam($+{user});
+		my $gid = getgrnam($+{group});
+		chown $uid, $gid, $nfile or print "Can't change owner of $nfile\n";
+	}
+}
+close IN;
