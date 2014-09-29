@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+import sys
+
+if len(sys.argv) < 3 :
+    print("Usage: {0} file1 file2 ...", file=sys.stderr )
+    exit(1)
+    
+contents = []
+
+for i in range(1, len(sys.argv)):
+    f=open(sys.argv[i],'r')
+    contents.append(f.readlines())
+    f.close()
+
+maxv = 0 # Max width of a line
+tabv = 4 # How many spaces separate the columns
+maxl = 0 # Max number of lines in a file
+
+for content in contents:
+    if len(content) > maxl: maxl=len(content)
+    
+    for line in content:
+        v=len(line.strip())
+        if v > maxv: maxv=v
+
+for i in range(maxl):
+    buf = []
+    for content in contents:
+        try:
+            buf.append(content[i].strip().ljust(maxv))
+        except IndexError:
+            buf.append("".ljust(maxv))
+    print(*buf, sep=(tabv * ' '))
+
+        
