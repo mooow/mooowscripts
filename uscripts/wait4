@@ -51,7 +51,7 @@
 ## version 2 - uses getopt to parse options. unstable
 #
 usage() {
-	echo "Usage: $0 [option ... ] process"
+	echo "Usage: $0 [option ... ] process [ ... ]"
 	echo "\nWait until the first process named <process> end."
 	echo "\nOptions:"
 	echo "\t-a\tIf there are many processes named <process> wait until they ALL end."
