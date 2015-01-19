@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+
+usage() {
+	echo "Usage: $0 [ -p | -f ]"
+	echo "\t-p\tpartial"
+	echo "\t-f\tfull (default action)"
+	echo "\nTakes a screenshot"
+	exit 1
+}
+
+deptest() {
+	which $1 &> /dev/null || { echo "ERROR: $1 not found!"; exit 1}
+}
+
+check() {
+	#scrot
+	deptest scrot	
+	#date
+	deptest date
+	#ninvert
+	deptest ninverse
+}
+
+check
+
+[ $# -gt 1 ] && usage
+
+partial=""
+[[ "$1" == "-p" ]] && partial="-s"
+
+ID=$( date +%s | ninverse )				# 10s complement of unix timestamp
+FILE="$HOME/Screenshots/scrot_$ID.png"
+scrot $partial "$FILE"
+echo $FILE

@@ -1,0 +1,8 @@
+#!/usr/bin/env python3
+
+### ninverse
+## returns the 10-s complement of the standard input
+
+import sys
+print(sys.stdin.read().translate(str.maketrans('0123456789',
+                                                               '9876543210')), end='')

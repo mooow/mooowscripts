@@ -1,0 +1,27 @@
+#!/usr/bin/zsh
+
+DEBUG=0
+debug () {
+	[ $DEBUG -gt 0 ] && echo "$@"
+}
+
+for opt in getopt d "$@"
+do
+	case $opt in
+		\-d)    
+			DEBUG=1 
+			;;
+	esac
+done
+
+
+ip=$( ip -o -f inet addr | grep wl  | awk '{print$4}' | sed -E 's/\.[0-9]{1,3}\/[0-9]{1,2}//' )
+debug IP is $ip
+
+for i in {1..254}
+do
+	debug -n $ip.$i ": "
+	resolveip "$ip.$i" 2> /dev/null || debug 
+done
+
+

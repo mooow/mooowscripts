@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use diagnostics;
+#use diagnostics;
 
 my $ponymix;
 
@@ -22,6 +22,14 @@ sub decv {
 	`$ponymix decrease $_[0]`;
 }
 
+sub toggle_mute {
+	my $val = getv();
+	if ($val == 0 ) {
+		setv(100);
+	} else {
+		setv(0);
+	}
+}
 sub test {
 	chomp ($ponymix = `which ponymix`);
 	die "ERROR! ponymix not found!\n" if ($?);
@@ -53,6 +61,8 @@ if(@ARGV == 0) {
 		} else {
 			print setv($2);
 		}
+	} elsif ( $ARGV[0] =~ m/^mute$/) {
+		print toggle_mute();
 	} else {
 		usage();
 	}

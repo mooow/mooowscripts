@@ -1,0 +1,53 @@
+#!/usr/bin/env zsh
+
+err() {
+	echo "$@" > /dev/stderr
+}
+
+checkuid() {
+	[ $(id -u) -eq 0 ] || { 
+		err "Must be run as root." > /dev/stderr
+		exit 1
+	}
+}
+
+start () {
+	err "Sharing PPP connection via ethernet"
+
+	checkuid # exit if not root
+
+	nm-online -qt 5 || {
+		wwan on
+	} # start internet connection
+	ip addr add 192.168.0.1/24 dev enp6s0 # initialize interface
+	sysctl net.ipv4.ip_forward=1 # set the kernel to router mode
+	systemctl start dnsmasq 	# start dnsmasq service
+	iptables -t nat -A POSTROUTING -o wwan0 -j MASQUERADE # set firewall to forward connections to and from the Internet for clients connecting to the vlan
+
+	err "Activated"
+}
+
+stop () {
+	err "Stop sharing PPP connection via ethernet"
+
+	checkuid # exit if not root
+
+	nmcli c down id enp6s0
+	iptables -t nat -D POSTROUTING -o wwan0 -j MASQUERADE 	# unset firewall to forward connections to and from the Internet
+	systemctl stop dnsmasq					# stop dnsmasq service
+	sysctl net.ipv4.ip_forward=0 			      	# unset kernel's router mode
+	ip addr del 192.168.0.1/24 dev enp6s0 # 
+	wwan off
+
+	err "Deactivated."
+}
+
+[ $# -eq 1 ] || { 
+	err "Usage: $0 (start|stop)"
+	exit 1
+}
+
+case $1 in 
+	start) start;;
+	stop) stop;;
+esac

@@ -1,0 +1,21 @@
+#!/usr/bin/env zsh
+
+if [[ "${2}x" != "x" ]] && { nmcli c | grep "${2}" }
+then
+        name="${2}"
+else
+        name="3 Abbonamento 1"
+fi
+
+echo "waiting for '${name}'..."
+
+case $1 in
+    on) while ! nmcli c up id $name &> /dev/null; do echo -n . ; sleep 1; done
+        ;;
+    off) nmcli c down id $name
+        ;;
+    r|restart) wwan off; wwan on
+        ;;
+    *) echo "Error: argument <$1> not recognized.\nUsage: $0 (on|off) [connection name]"
+        ;;
+esac

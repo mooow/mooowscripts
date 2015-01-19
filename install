@@ -17,6 +17,7 @@ LINE: while(<IN>) {
 		next LINE;
        	}
 	foreach( glob $+{expr} ) {
+		#print $_."\n";
 		my $file = $_; 
 		my $ndir = $+{path}."/".dirname($file);
 		my $nfile = $+{path}."/".$file;

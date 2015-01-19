@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+use strict;
+use diagnostics;
+use warnings;
+use v5.14;
+
+our $DEBUG=1;
+our $TIME=30;
+
+sub debug {
+	say (@_) if ($DEBUG>=1);
+}
+
+#alias curl="curl --verbose"
+
+chomp (our $host= `awk '/^Server = / { sub(/\\\$repo.*/, "iso/latest/", \$3); print \$3 }' /etc/pacman.d/mirrorlist | head -n1`);
+say $host;
+our $file=`curl $host 2> /dev/null | perl -n -e '/"(archlinux.*\.iso)"/ && print \$1'`; # grab latest iso
+debug ("Latest iso is: \`$file\`");
+
+#my @sta=
+#echo $sta
+system("bash -c \"for i in {1..$TIME..5}; do echo -n .; sleep 5;  done; echo\" &" );
+
+for (`curl -m $TIME "${host}${file}" 2>&1 > /dev/null`) {
+	if (/Operation[\w\s]*?(\d+)[\w\s]*?(\d+)[\w\s]*?(\d+).*/) { 
+		my $speed = $2/($1/1000);
+		my $ord = int(((log($speed) / log(10)))/3);
+		my @suffixes = qw ( B kB MB GB TB );
+		$speed/=(1000^$ord);
+		say "Speed: $speed ".$suffixes[$ord]."/s\n";
+	}
+}
+
+#perl -n -e $script <<< $sta
+#unalias curl

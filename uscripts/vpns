@@ -1,0 +1,23 @@
+#!/usr/bin/zsh
+
+ID=$(nmcli c | grep -vP -- '(--|tun|NAME)' | awk '{ print $1 }')
+
+services=($(systemctl| grep openvpn | grep running | awk '{print $1}'))
+
+#echo $services[@]
+nmcli g | grep connected &> /dev/null || { echo "ERROR: No Internet connection"; exit 1}
+[[ $services[@] ]] || { echo "ERROR: no openvpn service is running"; exit 2 }
+
+sudo systemctl kill $services[@]  &> /dev/null && echo "Stopped: $services" 
+nmcli c down id $ID               &> /dev/null && echo -n "Restarting connection whose ID is '$ID'"
+nmcli c up id $ID                 &> /dev/null && echo "\t[OK]"
+sudo systemctl restart $services[@] &> /dev/null && echo -n "Restarting: $services "
+
+until systemctl status $services[@] | grep "Initialization Sequence Completed" &> /dev/null
+do
+	echo -n .
+	sleep 5
+done
+echo "\t [OK]"
+
+echo "\nCompleted" ; notify-send "VPN Restarted"
