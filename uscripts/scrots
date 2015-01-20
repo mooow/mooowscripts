@@ -12,13 +12,17 @@ deptest() {
 	which $1 &> /dev/null || { echo "ERROR: $1 not found!"; exit 1}
 }
 
+ninverse() {
+	tr 0123456789 9876543210
+}
+
 check() {
 	#scrot
 	deptest scrot	
 	#date
 	deptest date
 	#ninvert
-	deptest ninverse
+	#deptest ninverse
 }
 
 check
