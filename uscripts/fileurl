@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+for path in $(readlink -f "$@")
+do
+	echo file://$path
+done

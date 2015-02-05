@@ -1,0 +1,108 @@
+#!/usr/bin/zsh
+
+setopt EXTENDED_GLOB
+
+log() {
+	msg="$(date -uR): $@"
+       	echo $msg >> /var/bootbak/log
+	echo $msg > /dev/stderr
+}
+
+die() {
+	log $@
+	exit 1
+}
+
+existance_v() {
+#	[ -f checksums.sha512 ] || mkchecksums checksums.sha512
+#	[ -f checksums.sha1 ]   || mkchecksums checksums.sha1
+#	[ -f checksums.md5 ]    || mkchecksums checksums.md5
+	[ -f bootloader ] 	|| { log "Missing backup: bootloader. Backing up now"; 	backup_bootloader ;}
+	[ -f mbr ]		|| { log "Missing backup: mbr. Backing up now"; 	backup_mbr 	  ;}
+	[ -f fstab ]		|| { log "Missing backup: fstab. Backing up now"; 	backup_fstab      ;}
+	[ -f grub.cfg ]		|| { log "Missing backup: grubcfg. Backing up now"; 	backup_grubcfg    ;}
+}
+
+backup () {
+	backup_mbr; backup_bootloader; backup_fstab; backup_grubcfg; 
+}
+
+backup_bootloader() {
+	[ -f ./bootloader ] && mv ./bootloader ./bak/bootloader_$(date "+%s" )
+	dd if=/dev/sda of=./bootloader bs=446 count=1 &> /dev/null
+	cmp -n 446 /dev/sda ./bootloader && appendchecksums ./bootloader &> /dev/null
+}
+
+backup_mbr() {
+	[ -f ./mbr ] && mv ./mbr ./bak/mbr_$(date "+%s" )
+	dd if=/dev/sda of=./mbr bs=512 count=1 &> /dev/null
+	cmp -n 512 /dev/sda ./mbr && appendchecksums ./mbr &> /dev/null
+}
+
+backup_fstab() {
+	[ -f ./fstab ] && mv ./fstab ./bak/fstab_$(date "+%s" )
+	cp  /etc/fstab ./fstab
+	cmp /etc/fstab ./fstab && appendchecksums ./fstab &> /dev/null
+}
+
+backup_grubcfg() {
+	[ -f ./grub.cfg ] && mv ./grub.cfg ./bak/grub.cfg_$(date "+%s" )
+	cp  /boot/grub/grub.cfg ./grub.cfg
+	cmp /boot/grub/grub.cfg ./grub.cfg && appendchecksums ./grub.cfg &> /dev/null
+}
+
+mkchecksums() {
+	log "[CRITICAL] $1 is missing. It will be created now, but you probably should double check ;)"
+	alg=$( sed 's/checksums.//' <<< $1 )
+	${alg}sum ^(log|checksums|bak) > $1
+}
+
+appendchecksums() {
+	for f in checksums.{sha512,sha1,md5}
+	do
+		touch $f
+		mv $f $f.tmp
+		grep -v "$1" $f.tmp > $f
+		alg=$( sed 's/checksums.//' <<< $f )
+		${alg}sum "$1" >> $f
+		rm $f.tmp
+	done
+}
+
+checksums_v() {
+	[ -f checksums.sha512 ] || mkchecksums checksums.sha512
+	[ -f checksums.sha1 ] || mkchecksums checksums.sha1
+	[ -f checksums.md5 ] || mkchecksums checksums.md5
+
+	sha512sum -c checksums.sha512 &> /dev/null && 
+	sha1sum   -c checksums.sha1   &> /dev/null && 
+	md5sum    -c checksums.md5    &> /dev/null
+}
+
+uptodate_v() {
+	cmp -n 446 /dev/sda ./bootloader && appendchecksums ./bootloader || { log "bootloader changed, backing up..."; 	backup_bootloader ;}
+	cmp -n 512 /dev/sda ./mbr && appendchecksums ./mbr 		 || { log "mbr changed, backing up..."; 	backup_mbr	  ;}
+	cmp /etc/fstab ./fstab && appendchecksums ./fstab 		 || { log "fstab changed, backing up..."; 	backup_fstab	  ;}
+	cmp /boot/grub/grub.cfg ./grub.cfg && appendchecksums ./grub.cfg || { log "grub.cfg changed, backing up..."; 	backup_grubcfg	  ;}
+}
+
+### Entry point:
+mkdir -p /var/bootbak
+cd /var/bootbak || die "[CRITICAL] Cannot cd to /var/bootbak"
+
+# check existence of all needed backups
+existance_v
+
+# check integrity of our backups
+checksums_v || {
+	log "[WARNING] Backup file not matching checksums"
+	dir="./bak/$(date +%s)"
+	mkdir -p $dir
+	mv ^(log|bak|checksums)* $dir
+
+	backup
+	exit 2
+}
+
+# Now check wether our backups are up to date
+uptodate_v

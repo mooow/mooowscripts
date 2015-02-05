@@ -45,6 +45,30 @@ _list () {
 	exit 0;
 }
 
+_info () {
+	tmp=`mktemp`
+	if cmus-remote -Q  &> /dev/null
+	then
+		title='cmus'
+		echo -e Status: $($0 status) '\n' >> $tmp
+
+		echo Artist:  $($0 -p cmus metadata artist) >> $tmp
+		echo Album:  $($0 -p cmus metadata album) >> $tmp
+		echo Title:  $($0 -p cmus metadata title) >> $tmp
+	else
+		title=$(playerctl -l  |cut -f1 -d' ')
+		echo -e Status: $(playerctl status) '\n' >> $tmp
+		echo Artist: $(playerctl metadata xesam:artist) >> $tmp
+		echo Album:  $(playerctl metadata xesam:album) >> $tmp
+		echo Title:  $(playerctl metadata xesam:title) >> $tmp
+	fi
+	#title="$title -- palyerctl-cmus"
+	cat $tmp
+	kdialog --title "${title}" --passivepopup "$(cat $tmp)" 3
+	rm $tmp
+}
+		
+
 PLAYER="cmus"
 while true ; do
 	case "$1" in
@@ -61,6 +85,7 @@ done
 
 SKIPCMUS=1
 cmus-remote -Q  &> /dev/null && [ ${PLAYER}x = "cmusx" ] && SKIPCMUS=0
+[ $# -eq 1 ] && [ $1 == "info" ] && SKIPCMUS=0
 
 [ $SKIPCMUS -eq 1 ] &&  exec playerctl $@ 
 
@@ -72,8 +97,16 @@ case $1 in
 	next)		cmus-remote -n ;;
 	previous)	cmus-remote -r ;;
 	volume)		[ $# -eq 2 ] && cmus-remote -v $2 || cmus-remote -Q | grep vol_ ;;
-	status)		cmus-remote -Q ;;
-	metadata)	[ $# -eq 2 ] && cmus-remote -Q ./playerctl-cmus status | awk "/^tag $2\\s/ {print}" | sed "s/tag //" ;; 
+	status)		cmus-remote -Q | awk '/^status/ {print $2}' ;;
+	metadata)	
+		if [ $# -eq 2 ]
+		then
+			cmus-remote -Q | awk "/^tag $2/ {print}" | cut -f1,2 -d' ' --complement #sed "s/tag $2//"
+		else
+			cmus-remote -Q | awk "/^tag / {print}" | cut -f1 -d' ' --complement #sed "s/tag $2//"
+		fi
+	;;
 		#| grep tag | grep $2 || cmus-remote -Q ;;
+	info) _info ;;
 	*)	echo "Unknown option '$1'" > /dev/stderr ; exit 4 ;;
 esac
