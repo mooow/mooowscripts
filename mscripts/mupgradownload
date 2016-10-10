@@ -31,4 +31,14 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-nmcli d | grep gsm | grep connected && nm-online   && /usr/bin/pacman -Syuw --noconfirm
+LOGFILE="/var/log/$0.log"
+echo -e "\n------" >> $LOGFILE
+echo "Attempting to download updates [ $(date -Iseconds --utc)]" >> $LOGFILE
+if nm-online
+then
+	/usr/bin/pacman -Syuw --noconfirm >> $LOGFILE
+else
+	echo "Not connected, will retry later." >> $LOGFILE
+fi
+
+#nmcli d | grep gsm | grep connected && nm-online   && /usr/bin/pacman -Syuw --noconfirm
