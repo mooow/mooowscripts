@@ -33,6 +33,6 @@ partial=""
 [[ "$1" == "-p" ]] && partial="-s"
 
 ID=$( date +%s | ninverse )				# 10s complement of unix timestamp
-FILE="$HOME/Screenshots/scrot_$ID.png"
+FILE="$HOME/Screenshots/screenshot_$ID.png"
 scrot $partial "$FILE"
 echo $FILE
