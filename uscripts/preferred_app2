@@ -43,16 +43,21 @@ use warnings;
 use autodie;
 use diagnostics;
 
-die "Usage: $0 program [mimetype list]\n" unless (@ARGV >= 1);
+die "Usage: $0 program [mimetype regex]\n" unless (@ARGV >= 1);
 
 my $program = $ARGV[0];
 my $cmd;
-if ( @ARGV == 1 ) {
+if ( @ARGV >= 1 ) {
 	open IN, "/usr/share/applications/$program.desktop";
 	my @lines = grep /^MimeType=/ , <IN>;
 	foreach (@lines) {
 		s/MimeType=//;
-		my @mimes = split /;/;
+		my @mimes;
+		if(@ARGV == 2) {
+            @mimes = grep /$ARGV[1]/, split /;/ ;
+        } else {
+            @mimes = split /;/ ;
+        } 
 		$cmd = "xdg-mime default ${program}.desktop @mimes";
 		say $cmd;
 	}
@@ -62,6 +67,7 @@ if ( @ARGV == 1 ) {
 	$cmd = "xdg-mime default ${program}.desktop @mimes";
 	say $cmd;
 }
+exit;
 `$cmd`;
 
 

@@ -1,0 +1,12 @@
+#!/usr/bin/zsh
+
+usage() {
+	echo "Syntax: $0 <command> [arguments]"
+	echo "Runs <command> with specified arguments, detaches its i/o streams, and disowns the process"
+}
+
+[ $# -lt 1 ] && usage()
+{ [[ "$0" == "--help" ]] || [[ "$0" == "-h" ]] } && { usage; exit 1 }
+
+echo "Running [$@]"
+"$@" &> /dev/null &! 
