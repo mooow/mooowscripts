@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+
+sub syntax {
+	print "Syntax: $0 <pattern>";
+	exit 1;
+}
+
+syntax if @ARGV != 1;
+
+while(<STDIN>) {
+	print if $. == 1 or m/$ARGV[0]/;
+}
