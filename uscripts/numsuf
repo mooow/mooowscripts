@@ -1,0 +1,34 @@
+#!/usr/bin/env perl
+use warnings;
+use diagnostics;
+sub syntax {
+	print "Syntax: $0 dec|enc <number>
+	
+	dec: decode a number with suffix to simple decimal
+	enc: encode a simple decimal to number with suffix\n";
+	exit 1;
+}
+
+sub enc {
+
+}
+
+sub dec {
+	%pow = ( "k", 1, "M", 2, "G", 3, "T", 4 );
+	%conv = ( "dec", 1000, "bin", 1024 );
+	if ( $ARGV[1] =~ m/([0-9]*\.?[0-9]*)\s*([kMGT]?)(i?)([A-Za-z]*)/ ) {
+		my ( $num, $bin, $mult );
+		print "1 = $1, 2 = $2, 3 = $3, 4 = $4\n";
+	       	$bin = ( $3 eq "i" ) ? "bin" : "dec";
+		$mult = $2 ? $conv{$bin} ** $pow{$2} : 1;
+		$num = $1 * $mult;
+		print "$num $4\n";
+	} else {
+		print STDERR "Error: invalid number\n";
+		exit 1;
+	}
+}
+
+syntax if scalar @ARGV != 2;
+enc if $ARGV[0] eq "enc"; 
+dec if $ARGV[0] eq "dec";

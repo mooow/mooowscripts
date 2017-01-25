@@ -1,0 +1,6 @@
+#!/usr/bin/env zsh
+
+for group in $@
+do
+	pacman -Sg $group | awk '{print $2}'
+done

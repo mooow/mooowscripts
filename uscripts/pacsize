@@ -31,19 +31,49 @@
 # EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+conv() {
+	typeset -F 3 tmp=$1
+	typeset -F 3 div
+	cnt=1
+
+	if [[ "$2" == "bin" ]]
+	then
+		(( div = 1024 ))
+		suf=( "B" "KiB" "MiB" "GiB" )
+	else
+		(( div = 1000 ))
+		suf=( B KB MB GB )
+	fi
+
+	while [[ $cnt -le 4 && $(( $tmp / $div )) -gt 0.1 ]]
+	do
+		(( tmp = $tmp / $div ))
+		(( cnt = $cnt + 1 ))
+	done
+	echo $tmp ${suf[$cnt]}
+}
+
 tot=0
-for size in `pacman -Si "$@" | grep "Installed Size" | awk '{ print $4$5 }' | sed 's/iB//'`
+for pkg in $@
 do
-	mult=`echo $size | grep -o '[KMGT]$'`
-	value=`echo $size | grep -Po '^[[:digit:]]*\.?[[:digit:]]+'`
+	size="$( pacman -Si $pkg | grep Installed | awk '{print $4,$5}'	)"
+	value=${${=size}[1]}
+	mult=${${=size}[2]}
 	case $mult in 
-		K) mvalue=1000 ;;
-		M) mvalue=1000000 ;;
-		G) mvalue=1000000000 ;;
+		KiB) mvalue=$(( 2 ** 10 )) ;;
+		MiB) mvalue=$(( 2 ** 20 )) ;;
+		GiB) mvalue=$(( 2 ** 30 )) ;;
 		*) echo "[WARNING] Invalid suffix [$mult], assuming 1." ; mvalue=1 ;;
 	esac
 	tmp=$(( $value * $mvalue ))
 	tot=$(( $tot + $tmp ))
 done
 
-echo "Total size is $tot."
+
+#for size in "$( pacman -Si "$@" | grep "Installed Size" | awk '{ print $4, $5 }' )"
+#do
+#	#mult=`echo $size | grep -o '[KMGT]$'`
+#	#value=`echo $size | grep -Po '^[[:digit:]]*\.?[[:digit:]]+'`
+	
+val=$(conv $tot)
+echo "Total size is $val."
