@@ -1,12 +1,11 @@
-#!/usr/bin/env perl
-use warnings;
-use diagnostics;
+#!perl -s
 sub syntax {
-	print "Syntax: $0 dec|enc <number>
+	print "Syntax: $0 -dec|-enc <options>
 	
-	dec: decode a number with suffix to simple decimal
-	enc: encode a simple decimal to number with suffix\n";
-	exit 1;
+	-dec: decode a number with suffix to simple decimal
+	-enc: encode a simple decimal to number with suffix
+	-n:   don't print units\n";
+	exit 0;
 }
 
 sub enc {
@@ -14,21 +13,23 @@ sub enc {
 }
 
 sub dec {
-	%pow = ( "k", 1, "M", 2, "G", 3, "T", 4 );
+	%pow = ( "K", 1, "k", 1, "M", 2, "G", 3, "T", 4 );
 	%conv = ( "dec", 1000, "bin", 1024 );
-	if ( $ARGV[1] =~ m/([0-9]*\.?[0-9]*)\s*([kMGT]?)(i?)([A-Za-z]*)/ ) {
-		my ( $num, $bin, $mult );
-		print "1 = $1, 2 = $2, 3 = $3, 4 = $4\n";
-	       	$bin = ( $3 eq "i" ) ? "bin" : "dec";
-		$mult = $2 ? $conv{$bin} ** $pow{$2} : 1;
-		$num = $1 * $mult;
-		print "$num $4\n";
-	} else {
-		print STDERR "Error: invalid number\n";
-		exit 1;
+	while(<>) {
+		if ( m/([0-9]*\.?[0-9]*)\s*([KkMGT]?)(i?)([A-Za-z]*)/ ) {
+			my ( $num, $bin, $mult );
+		       	$bin = ( $3 eq "i" ) ? "bin" : "dec";
+			$mult = $2 ? $conv{$bin} ** $pow{$2} : 1;
+			$num = $1 * $mult;
+			print defined $n ? "$num\n" : "$num $4\n";
+		} else {
+			print STDERR "Error: invalid number\n";
+			exit 1;
+		}
 	}
 }
 
-syntax if scalar @ARGV != 2;
-enc if $ARGV[0] eq "enc"; 
-dec if $ARGV[0] eq "dec";
+#syntax if undef $enc and undef $dec
+syntax if $h;
+enc if $enc;
+dec if $dec;

@@ -54,25 +54,13 @@ conv() {
 }
 
 tot=0
-for pkg in $@
+for size in $( pacman -Si "$@" | awk '/Installed Size/{ print $4$5 }' | numsuf -dec -n)
 do
-	size="$( pacman -Si $pkg | grep Installed | awk '{print $4,$5}'	)"
-	value=${${=size}[1]}
-	mult=${${=size}[2]}
-	case $mult in 
-		KiB) mvalue=$(( 2 ** 10 )) ;;
-		MiB) mvalue=$(( 2 ** 20 )) ;;
-		GiB) mvalue=$(( 2 ** 30 )) ;;
-		*) echo "[WARNING] Invalid suffix [$mult], assuming 1." ; mvalue=1 ;;
-	esac
-	tmp=$(( $value * $mvalue ))
-	tot=$(( $tot + $tmp ))
+	tot=$(( $tot + $size ))
 done
 
 
-#for size in "$( pacman -Si "$@" | grep "Installed Size" | awk '{ print $4, $5 }' )"
-#do
-#	#mult=`echo $size | grep -o '[KMGT]$'`
+	#mult=`echo $size | grep -o '[KMGT]$'`
 #	#value=`echo $size | grep -Po '^[[:digit:]]*\.?[[:digit:]]+'`
 	
 val=$(conv $tot)
