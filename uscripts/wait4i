@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+import sys, os, time
+
+def _p():
+    print('*', end="", flush=True)
+    time.sleep(1)
+
+def wait4cmd(cmd):
+    while os.system("pgrep {} &> /dev/null".format(cmd)) == 0: _p()
+
+def wait4pid(pid):
+    while os.system("ps -p {} &> /dev/null".format(pid)) == 0: _p()
+
+for arg in sys.argv[1:]:
+    try:
+        argi = int(arg)
+        wait4pid(argi)
+    except ValueError:
+        wait4cmd(arg)
+    print("\ndone.")
