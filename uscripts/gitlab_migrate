@@ -1,0 +1,28 @@
+#!/usr/bin/env zsh
+
+#  This tool is used to migrate an existing repo to
+#  an already existing gitlab repo (after you "imported")
+# 
+#  This adds the gitlab remote to the repo and pushes all
+#  the remote branches.
+#
+#  Run this from inside an existing repo.
+#  The old remote is not deleted.
+#
+#  Usage: gitlab_migrate <gitlab_handle>
+#         This will add the remote: git@gitlab.com:<gitlab_handle>
+#         Where <gitlab_handle> is something like lmureu/mooowscripts
+
+[ $# -ne 1 ] && { 
+	echo Syntax: $0 "<gitlab repo>"
+	exit 1 
+}
+
+set -x
+git status
+git branch -r
+git remote get-url --all origin
+read "?Press ENTER to continue... "
+git remote set-url --add origin git@gitlab.com:"$1"
+git remote get-url --all origin
+git branch -r | git push
